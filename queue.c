@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -280,9 +281,50 @@ void q_reverse(struct list_head *head)
 
     head->next = head->prev;
     head->prev = next;
-    // list_for_each_safe(node, next, head) {
-    //     list_move(node, head);
+
+    // list_for_each_safe (node, next, head) {
+    //     list_move (node, head);
     // }
+}
+
+struct list_head *merge_two_lists(struct list_head *L1, struct list_head *L2)
+{
+    struct list_head *head = NULL;
+    struct list_head **indir = &head, **temp = NULL;
+
+    for (; L1 && L2; *temp = (*temp)->next) {
+        element_t *L1_ele = list_entry(L1, element_t, list);
+        element_t *L2_ele = list_entry(L2, element_t, list);
+
+        temp = strcmp(L1_ele->value, L2_ele->value) < 0 ? &L1 : &L2;
+        *indir = *temp;
+        indir = &(*indir)->next;
+    }
+
+    *indir = (struct list_head *) ((uintptr_t) L1 | (uintptr_t) L2);
+
+    return head;
+}
+
+struct list_head *merge_sort(struct list_head *head)
+{
+    if (!head || !head->next)
+        return head;
+
+    struct list_head *slow = head, *fast;
+
+    for (fast = head->next; fast && fast->next; fast = fast->next->next)
+        slow = slow->next;
+
+    struct list_head *left, *right;
+
+    right = slow->next;
+    slow->next = NULL;  // no prev
+
+    left = merge_sort(head);
+    right = merge_sort(right);
+
+    return merge_two_lists(left, right);
 }
 
 /*
@@ -290,4 +332,20 @@ void q_reverse(struct list_head *head)
  * No effect if q is NULL or empty. In addition, if q has only one
  * element, do nothing.
  */
-void q_sort(struct list_head *head) {}
+void q_sort(struct list_head *head)
+{
+    if (!head || list_empty(head) || list_is_singular(head)) {
+        return;
+    }
+
+    head->prev->next = NULL;
+    head->next = merge_sort(head->next);
+
+    struct list_head *tmp = NULL, *prev = head;
+    for (tmp = head->next; tmp->next != NULL; tmp = tmp->next) {
+        tmp->prev = prev;
+        prev = prev->next;
+    }
+    tmp->next = head;
+    head->prev = tmp;
+}
