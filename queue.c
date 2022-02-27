@@ -229,7 +229,7 @@ bool q_delete_dup(struct list_head *head)
         return false;
 
     element_t *element, *next_element;
-    int check = -1;
+    bool check = 0;
 
     list_for_each_entry_safe (element, next_element, head, list) {
         if (&next_element->list != head &&
@@ -346,6 +346,7 @@ void q_sort(struct list_head *head)
         tmp->prev = prev;
         prev = prev->next;
     }
+    tmp->prev = prev;
     tmp->next = head;
     head->prev = tmp;
 }
